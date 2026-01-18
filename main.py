@@ -5,37 +5,43 @@ from transformers import pipeline
 
 app = FastAPI()
 
-# 1. Initialize the AI Model (Zero-Shot Classifier)
-# This model can classify text into ANY category without extra training
-classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+# 1. LOAD THE LLM (Neural Engine)
+# We use a 'Zero-Shot' model that knows security concepts out of the box.
+# 'cross-encoder/ms-marco-TinyBERT-L-2-v2' is fast and lightweight.
+print("Loading Neural Engine... Please wait.")
+classifier = pipeline("zero-shot-classification", model="cross-encoder/ms-marco-TinyBERT-L-2-v2")
 
-class EmailPayload(BaseModel):
-    text: str
+class EmailInput(BaseModel):
+    content: str
 
 @app.post("/analyze")
-async def analyze_email(payload: EmailPayload):
-    # We ask the AI to check the text against these specific "Security Labels"
-    candidate_labels = ["phishing attempt", "urgent financial request", "safe professional email", "spam"]
+async def analyze_email(data: EmailInput):
+    # The AI will weigh the text against these security-focused labels
+    labels = ["safe professional email", "phishing scam", "urgent account threat", "spam"]
     
-    result = classifier(payload.text, candidate_labels)
+    # AI Analysis Phase
+    output = classifier(data.content, labels)
     
-    # Extract the top result
-    top_label = result['labels'][0]
-    confidence = result['scores'][0] * 100
-
-    # Logic for Verdict
-    if top_label in ["phishing attempt", "urgent financial request"] and confidence > 60:
+    top_label = output['labels'][0]
+    confidence = output['scores'][0] * 100
+    
+    # Determine the Verdict based on AI Reasoning
+    if top_label in ["phishing scam", "urgent account threat"] and confidence > 55:
         verdict = "MALICIOUS"
+        color = "#ef4444" # Red
     elif confidence < 50:
         verdict = "SUSPICIOUS"
+        color = "#f59e0b" # Amber
     else:
         verdict = "SAFE"
+        color = "#10b981" # Green
 
     return {
         "verdict": verdict,
-        "ai_label": top_label,
-        "confidence": f"{confidence:.2f}%",
-        "analysis": "AI detected signs of " + top_label
+        "score": round(confidence, 1),
+        "ai_logic": f"AI classified this as a '{top_label}' with {confidence:.1f}% confidence.",
+        "color": color
     }
 
+# Mount the frontend
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
