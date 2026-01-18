@@ -1,0 +1,5 @@
+sentinel_ai/
+├── main.py              # The "Brain" (FastAPI Backend)
+├── requirements.txt     # The "Ingredients" (Libraries)
+└── static/              # The "Face" (Frontend folder)
+    └── index.html       # Animated Dashboard
