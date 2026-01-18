@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <title>Sentinel AI | Real-Time Phish Guard</title>
+    <style>
+        body { background: radial-gradient(circle at top, #0f172a, #020617); }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="text-white font-sans min-h-screen p-6">
+    <div class="max-w-4xl mx-auto mt-10">
+        <header id="header" class="text-center mb-10 opacity-0">
+            <h1 class="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">SENTINEL AI</h1>
+            <p class="text-slate-500 font-mono tracking-widest mt-2">REAL-TIME NEURAL DEFENSE</p>
+        </header>
+
+        <div id="settings" class="glass p-4 rounded-2xl mb-8 flex gap-4 opacity-0">
+            <input type="password" id="vt_key" placeholder="VirusTotal API Key" class="flex-1 bg-transparent border-b border-slate-700 p-2 outline-none text-sm">
+            <button onclick="saveKey()" class="bg-blue-600 px-6 py-2 rounded-xl text-xs font-bold hover:bg-blue-500 transition">SAVE KEY</button>
+        </div>
+
+        <div id="main-card" class="glass p-8 rounded-[2rem] shadow-2xl opacity-0">
+            <textarea id="body" class="w-full h-40 bg-slate-900/50 rounded-xl p-4 border border-slate-700 mb-4 focus:border-blue-500 outline-none transition" placeholder="Paste email content here..."></textarea>
+            <input id="url" type="text" placeholder="Suspicious URL (optional)" class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700 mb-8 outline-none">
+            
+            <button onclick="scan()" id="scanBtn" class="w-full py-5 bg-blue-600 rounded-2xl font-black text-xl hover:shadow-[0_0_30px_rgba(37,99,235,0.4)] transition-all">SCAN SYSTEM</button>
+        </div>
+
+        <div id="results" class="hidden mt-10 space-y-4">
+            <div id="verdict-card" class="glass p-8 rounded-[2rem] text-center">
+                <h2 id="verdict-text" class="text-5xl font-black">---</h2>
+                <div class="w-full bg-slate-800 h-2 rounded-full mt-6 overflow-hidden">
+                    <div id="progress" class="h-full bg-blue-500 w-0 transition-all duration-1000"></div>
+                </div>
+            </div>
+            <div id="logs" class="glass p-6 rounded-2xl text-slate-400 text-sm italic"></div>
+        </div>
+
+        <footer class="mt-20 text-center text-slate-600 text-[10px] font-mono uppercase tracking-[0.2em]">
+            © 2026 All Rights Reserved | Maveera (Link <a href="http://maveera.rf.gd" class="underline">maveera.rf.gd</a>)
+        </footer>
+    </div>
+
+    <script>
+        // Start Animations
+        gsap.to("#header", { opacity: 1, y: 20, duration: 1 });
+        gsap.to("#settings", { opacity: 1, delay: 0.3 });
+        gsap.to("#main-card", { opacity: 1, y: 20, delay: 0.5 });
+
+        function saveKey() {
+            localStorage.setItem('vt_api', document.getElementById('vt_key').value);
+            alert("Key saved in browser storage.");
+        }
+
+        async function scan() {
+            const btn = document.getElementById('scanBtn');
+            btn.innerText = "SCANNING LAYERS...";
+            gsap.to(btn, { scale: 0.98, repeat: -1, yoyo: true });
+
+            const response = await fetch('/api/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-vt-key': localStorage.getItem('vt_api') },
+                body: JSON.stringify({ body: document.getElementById('body').value, url: document.getElementById('url').value })
+            });
+
+            const data = await response.json();
+            
+            document.getElementById('results').classList.remove('hidden');
+            gsap.from("#results", { opacity: 0, y: 30 });
+
+            const vText = document.getElementById('verdict-text');
+            vText.innerText = data.verdict;
+            vText.className = `text-5xl font-black ${data.verdict === 'SECURE' ? 'text-emerald-400' : 'text-red-500'}`;
+            
+            document.getElementById('progress').style.width = data.score + "%";
+            document.getElementById('logs').innerHTML = data.alerts.map(a => `• ${a}`).join('<br>');
+
+            btn.innerText = "SCAN SYSTEM";
+            gsap.killTweensOf(btn);
+            gsap.to(btn, { scale: 1 });
+        }
+    </script>
+</body>
+</html>
