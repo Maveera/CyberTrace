@@ -1,0 +1,11 @@
+# Web Framework and Server
+fastapi==0.128.0
+uvicorn[standard]==0.25.0
+
+# Data Validation and API calls
+pydantic==2.12.5
+requests==2.31.0
+
+# Networking and Forensics (Optional but recommended)
+python-whois==0.9.4
+python-multipart==0.0.9
